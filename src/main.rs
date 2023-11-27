@@ -1,19 +1,20 @@
 use std::net::SocketAddr;
 
 use axum::{ Router, routing::get, response::Html, http::HeaderMap, extract::ConnectInfo };
+use tokio::net::TcpListener;
 
 #[tokio::main]
 async fn main() {
     // build our application with a route
     let routes_all = Router::new().route("/", get(handler));
 
-    let addr = SocketAddr::from(([0, 0, 0, 0], 8080));
-    println!("->> LISTENING on {addr}\n");
+    let listener = TcpListener::bind("0.0.0.0:8080").await.unwrap();
+    println!("->> LISTENING on {:?}\n", listener.local_addr());
     // run it
-    axum::Server
-        ::bind(&addr)
-        .serve(routes_all.into_make_service_with_connect_info::<SocketAddr>()).await
-        .unwrap();
+    axum::serve(
+        listener,
+        routes_all.into_make_service_with_connect_info::<SocketAddr>()
+    ).await.unwrap();
 }
 
 async fn handler(
